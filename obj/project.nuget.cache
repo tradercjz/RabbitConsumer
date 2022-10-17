@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "ruK41usaYavvwp1Xk1dKGUVraiXi0lGTosvJT1yyUGl5z8z7Hxt47jEdO6Vmrdttt53T+8/hYlqp9SkeR0Mqig==",
+  "success": true,
+  "projectFilePath": "/ssd/ssd3/jzchen/dotnet/RabbitConsumer/RabbitConsumer.csproj",
+  "expectedPackageFiles": [
+    "/home/appadmin/.nuget/packages/dolphindb/1.30.19.8/dolphindb.1.30.19.8.nupkg.sha512",
+    "/home/appadmin/.nuget/packages/rabbitmq.client/6.4.0/rabbitmq.client.6.4.0.nupkg.sha512",
+    "/home/appadmin/.nuget/packages/system.memory/4.5.4/system.memory.4.5.4.nupkg.sha512",
+    "/home/appadmin/.nuget/packages/system.threading.channels/4.7.1/system.threading.channels.4.7.1.nupkg.sha512"
+  ],
+  "logs": []
+}

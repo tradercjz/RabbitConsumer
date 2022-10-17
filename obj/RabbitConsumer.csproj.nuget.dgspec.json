@@ -1,0 +1,71 @@
+{
+  "format": 1,
+  "restore": {
+    "/ssd/ssd3/jzchen/dotnet/RabbitConsumer/RabbitConsumer.csproj": {}
+  },
+  "projects": {
+    "/ssd/ssd3/jzchen/dotnet/RabbitConsumer/RabbitConsumer.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/ssd/ssd3/jzchen/dotnet/RabbitConsumer/RabbitConsumer.csproj",
+        "projectName": "RabbitConsumer",
+        "projectPath": "/ssd/ssd3/jzchen/dotnet/RabbitConsumer/RabbitConsumer.csproj",
+        "packagesPath": "/home/appadmin/.nuget/packages/",
+        "outputPath": "/ssd/ssd3/jzchen/dotnet/RabbitConsumer/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/appadmin/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "RabbitMQ.Client": {
+              "target": "Package",
+              "version": "[6.4.0, )"
+            },
+            "dolphindb": {
+              "target": "Package",
+              "version": "[1.30.19.8, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/6.0.400/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
