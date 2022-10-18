@@ -135,19 +135,20 @@ namespace dolphindb_csharpapi_net_core.src
         RabbitMQ.Client.IModel RabbitChannel;
         string DolphinDBHost, DolphinDBUser, DolphinDBPassword;
         int DolphinDBPort;
-        public static long allstart = System.DateTime.Now.Ticks;
         public static long allValue = 0;
         public static object lockers = new object();
         public Counts count_;
+        public long time;
         /// <summary>
         /// 配置用户数据库的ip、端口、用户名以及密码。
         /// </summary>
-        public void config(string host, int port, string user, string password, Counts count)
+        public void config(string host, int port, string user, string password, Counts count, long start)
         {
             DolphinDBHost = host;
             DolphinDBUser = user;
             DolphinDBPassword = password;
             DolphinDBPort = port;
+            time = start;
             count_ = count;
         }
 
@@ -172,7 +173,7 @@ namespace dolphindb_csharpapi_net_core.src
                         {
                             allValue += darray.Count;
                             long endsss = System.DateTime.Now.Ticks;
-                            Console.WriteLine("总时间：" + ((endsss - allstart) / 10000) + " ms");
+                            Console.WriteLine("总时间：" + ((endsss - time) / 10000) + " ms");
                             Console.WriteLine("总条数：" + allValue);
                         }
                         //在MTW写入成功并回调以后，开启ACK
@@ -199,14 +200,17 @@ namespace dolphindb_csharpapi_net_core.src
                 RabbitChannel.BasicAck(deliveryTag: tag, multiple: false);
 
                 count_.count++;
+
                 if (count_.count >= 100000)
                 {
                     // print consume time
                     long endsss = System.DateTime.Now.Ticks;
-                    TimeSpan elapsedSpan = new TimeSpan(endsss - allstart);
-                    Console.WriteLine("Total time:" + elapsedSpan.TotalMilliseconds + " ms,  Count:" + count_.count);
-                }
+                    TimeSpan elapsedSpan = new TimeSpan(endsss - time);
+                    //Console.WriteLine("Total time:" + (endsss - allstart) / 10000 + " ms,  Count:" + count_.count);
 
+                    Console.WriteLine("Total time:" + elapsedSpan.TotalMilliseconds+ " ms,  Count:" + count_.count);
+                }
+                
                 //此处为收到消息后通过DolphinBD的C-Sharp API的MultithreadedTableWriter类写入DolphinDB Server
                 //单独统计rabbitmq发送数据的性能时，去掉这段代码
 
@@ -249,9 +253,12 @@ namespace dolphindb_csharpapi_net_core.src
 
         private IModel rabbitChan;
 
-        public Consumer(string channelId)
+        private Counts count;
+
+        public Consumer(string channelId, Counts count)
         {
             this.channelId = channelId;
+            this.count = count;
 
             rabbitChan = new RabbitMQ.Client.ConnectionFactory()
             {
@@ -270,12 +277,11 @@ namespace dolphindb_csharpapi_net_core.src
                                  exclusive: false,
                                  autoDelete: false,
                                  arguments: null);
-
-            Counts count = new Counts();
-
+            rabbitChan.BasicQos(0, 10000, true);
+            long start = System.DateTime.Now.Ticks;
             DdbService ddbService = new DdbService(rabbitChan, queueName);
-            ddbService.config(DolphinDBIP, DolphinDBPort, DolphinDBUser, DolphinDBPassword,count);
-         
+            ddbService.config(DolphinDBIP, DolphinDBPort, DolphinDBUser, DolphinDBPassword,count, start);
+            
                 var consumer = new RabbitMQ.Client.Events.EventingBasicConsumer(rabbitChan);
                 consumer.Received += async (ch, ea) =>
                 {
@@ -289,8 +295,6 @@ namespace dolphindb_csharpapi_net_core.src
                              exclusive: false,
                              arguments: null
                              );
-           
-
             while (true)
             {
                 System.Threading.Thread.Sleep(500000000);
@@ -310,13 +314,19 @@ namespace dolphindb_csharpapi_net_core.src
         {
             List<Thread> ths = new List<Thread>();
             List<Consumer> lcs = new List<Consumer>();
+            List<Counts> css = new List<Counts>();
 
 
             int numThreads = 1;
 
+            for(int i = 0; i < numThreads; i++) {
+                Counts tc = new Counts();
+                css.Add(tc);
+            }
+
             for (int i = 0; i < numThreads; i++)
             {
-                Consumer c = new Consumer(i.ToString());
+                Consumer c = new Consumer(i.ToString(), css[i]);
                 lcs.Add(c);
             }
 
@@ -332,6 +342,23 @@ namespace dolphindb_csharpapi_net_core.src
             {
                 ths[i].Start();
             }
+
+
+            long starters = System.DateTime.Now.Ticks;
+            while(true){
+                int sum = 0; 
+                for(int i = 0; i < css.Count; i++){
+                    sum += css[i].count;
+                }
+                if(sum >= 100000){
+                    Console.WriteLine("总条数：" + sum);
+                    break;
+                }
+                Thread.Sleep(200);
+            }
+            
+            long allends = System.DateTime.Now.Ticks;
+            Console.WriteLine("总时间：" + ((allends - starters) / 10000) + " ms");
 
             for (int i = 0; i < numThreads; i++)
             {
