@@ -252,49 +252,55 @@ namespace dolphindb_csharpapi_net_core.src
         private string channelId;
 
         private IModel rabbitChan;
-
+        private List<IModel> channels = new List<IModel>();
+        
         private Counts count;
 
         public Consumer(string channelId, Counts count)
         {
             this.channelId = channelId;
             this.count = count;
-
-            rabbitChan = new RabbitMQ.Client.ConnectionFactory()
-            {
-                UserName = "admin",
-                Password = "123456",
-                HostName = "183.136.170.168",
-                Port = 5672
-            }.CreateConnection().CreateModel();
+            
+            for(int i = 0; i < 10; i++){
+                IModel rabbitChan = new RabbitMQ.Client.ConnectionFactory()
+                {
+                    UserName = "admin",
+                    Password = "123456",
+                    HostName = "183.136.170.168",
+                    Port = 5672
+                }.CreateConnection().CreateModel();
+                channels.Add(rabbitChan);
+            }
+            
         }
         public void run()
         {
             var queueName = "hello";
-
-            rabbitChan.QueueDeclare(queue: queueName,
-                                 durable: false,
+            for(int i = 0; i < 10; i++){
+                channels[i].QueueDeclare(queue: queueName,
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+                channels[i].BasicQos(0, 1000, false);
+                long start = System.DateTime.Now.Ticks;
+                DdbService ddbService = new DdbService(channels[i], queueName);
+                ddbService.config(DolphinDBIP, DolphinDBPort, DolphinDBUser, DolphinDBPassword,count, start);
+                
+                    var consumer = new RabbitMQ.Client.Events.EventingBasicConsumer(channels[i]);
+                    consumer.Received += async (ch, ea) =>
+                    {
+                        ddbService.Received(ch, ea);
+                    };
+                    channels[i].BasicConsume(queue: queueName,
+                                 autoAck: false,
+                                 consumer: consumer,
+                                 consumerTag: channelId.ToString(),
+                                 noLocal: false,
                                  exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
-            rabbitChan.BasicQos(0, 10000, true);
-            long start = System.DateTime.Now.Ticks;
-            DdbService ddbService = new DdbService(rabbitChan, queueName);
-            ddbService.config(DolphinDBIP, DolphinDBPort, DolphinDBUser, DolphinDBPassword,count, start);
-            
-                var consumer = new RabbitMQ.Client.Events.EventingBasicConsumer(rabbitChan);
-                consumer.Received += async (ch, ea) =>
-                {
-                    ddbService.Received(ch, ea);
-                };
-                rabbitChan.BasicConsume(queue: queueName,
-                             autoAck: false,
-                             consumer: consumer,
-                             consumerTag: channelId.ToString(),
-                             noLocal: false,
-                             exclusive: false,
-                             arguments: null
-                             );
+                                 arguments: null
+                                 );
+            }
             while (true)
             {
                 System.Threading.Thread.Sleep(500000000);
@@ -317,7 +323,7 @@ namespace dolphindb_csharpapi_net_core.src
             List<Counts> css = new List<Counts>();
 
 
-            int numThreads = 1;
+            int numThreads = 10;
 
             for(int i = 0; i < numThreads; i++) {
                 Counts tc = new Counts();
@@ -350,7 +356,7 @@ namespace dolphindb_csharpapi_net_core.src
                 for(int i = 0; i < css.Count; i++){
                     sum += css[i].count;
                 }
-                if(sum >= 100000){
+                if(sum >= 90000){
                     Console.WriteLine("总条数：" + sum);
                     break;
                 }
